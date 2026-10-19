@@ -44,6 +44,37 @@ function kitmage_paramessenger_sanitize_html( $html ) {
 	return wp_kses( $html, $allowed, array( 'http', 'https', 'mailto', 'tel' ) );
 }
 
+add_action( 'wp_body_open', 'kitmage_paramessenger_render_message' );
+// Support older themes that do not call wp_body_open().
+add_action( 'wp_footer', 'kitmage_paramessenger_render_message' );
+
+/**
+ * Display a URL message once, preserving only the supported safe HTML.
+ */
+function kitmage_paramessenger_render_message() {
+	static $rendered = false;
+
+	if ( $rendered || is_admin() || ! isset( $_GET['kmpm'] ) || ! is_string( $_GET['kmpm'] ) ) {
+		return;
+	}
+
+	$message = kitmage_paramessenger_sanitize_html( wp_unslash( $_GET['kmpm'] ) );
+	if ( '' === trim( $message ) ) {
+		return;
+	}
+
+	$classes = 'kitmage-paramessenger';
+	if ( isset( $_GET['kmpc'] ) && is_string( $_GET['kmpc'] ) ) {
+		$extra_classes = array_filter( array_map( 'sanitize_html_class', preg_split( '/\s+/', trim( wp_unslash( $_GET['kmpc'] ) ) ) ) );
+		if ( $extra_classes ) {
+			$classes .= ' ' . implode( ' ', $extra_classes );
+		}
+	}
+
+	$rendered = true;
+	echo '<div class="' . esc_attr( $classes ) . '" role="status">' . $message . '</div>';
+}
+
 add_action( 'admin_menu', 'kitmage_paramessenger_register_tools_page' );
 
 function kitmage_paramessenger_register_tools_page() {
