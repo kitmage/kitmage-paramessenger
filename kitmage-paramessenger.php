@@ -44,8 +44,6 @@ function kitmage_paramessenger_sanitize_html( $html ) {
 	return wp_kses( $html, $allowed, array( 'http', 'https', 'mailto', 'tel' ) );
 }
 
-add_action( 'wp_body_open', 'kitmage_paramessenger_render_message' );
-// Support older themes that do not call wp_body_open().
 add_action( 'wp_footer', 'kitmage_paramessenger_render_message' );
 
 /**
@@ -72,7 +70,26 @@ function kitmage_paramessenger_render_message() {
 	}
 
 	$rendered = true;
-	echo '<div class="' . esc_attr( $classes ) . '" role="status">' . $message . '</div>';
+	echo '<template><div class="' . esc_attr( $classes ) . '" role="status">' . $message . '</div></template>';
+	?>
+	<script>
+	(function () {
+		const template = document.currentScript.previousElementSibling;
+		function insertMessage() {
+			const content = document.querySelector('#content');
+			if (content) {
+				content.prepend(template.content);
+			}
+			template.remove();
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', insertMessage, { once: true });
+		} else {
+			insertMessage();
+		}
+	}());
+	</script>
+	<?php
 }
 
 add_action( 'admin_menu', 'kitmage_paramessenger_register_tools_page' );
